@@ -60,7 +60,7 @@ pub fn box_list_view(os: Vec<BoxDataInfo>) -> iced::Element<'static, Message, Re
 
     container(column![
         header,
-        scrollable(Column::with_children(rows).padding(10)).direction(vertical_direction()),
+        scrollable(Column::with_children(rows).spacing(10).padding(10)).direction(vertical_direction()),
     ])
     .style(second_class_container_rounded_theme())
     .into()
@@ -145,7 +145,7 @@ pub fn sn_list_view(os: Vec<SnDataInfo>) -> iced::Element<'static, Message, Rend
 
     container(column![
         header,
-        scrollable(Column::with_children(rows).padding(10)).direction(vertical_direction()),
+        scrollable(Column::with_children(rows).spacing(10).padding(10)).direction(vertical_direction()),
     ])
     .style(second_class_container_rounded_theme())
     .into()

@@ -1,151 +1,97 @@
-use tiberius::time::chrono;
+use mysql_async::{prelude::Queryable, Row};
+
 
 use crate::gui::views::{BoxDataInfo, SnDataInfo};
 
-use super::util::{client, login_check, sn_client};
-pub async fn sn_work(s: String) -> Vec<SnDataInfo> {
-    let mut row_data = Vec::new();
-    let mut client = sn_client().await;
-    let query_ty = format!("where SN = '{}'", s);
-    // let testtype = "SN,ProductBill,TestType,Result,Ith,Pf,Vop,Im,Rs,Sen,Res,ICC,Idark,Vbr,IXtalk,Kink,TestDate";
-    let testtype_12 = "SN,ProductBill,TestType,Result,Ith,Po,Vf,Im,Rs,Sen,Res,ICC,Idark,Vbr,Xtalk,Kink_I,TestDate";
-    // let stream  = client.query(format!("
-    // SELECT {3} FROM {1}MAC_10GBOSADATA  {0} UNION all SELECT {4} FROM {2}MAC_f07959df8122  {0}
-    // UNION all SELECT {4} FROM {2}MAC_00e04c686dd1  {0}  UNION all SELECT {4} FROM {2}MAC_00e04c3105fb  {0}
-    // UNION all SELECT {4} FROM {2}MAC_70e400a2c0d4  {0}  UNION all SELECT {4} FROM {2}MAC_00262da5e778  {0}
-    // UNION all SELECT {4} FROM {2}MAC_408d5cb2d04a  {0}  UNION all SELECT {4} FROM {2}MAC_408d5cb712a3  {0}
-    // UNION all SELECT {4} FROM {2}MAC_408d5cb72176  {0}  UNION all SELECT {4} FROM {2}MAC_10634b007c4b  {0}
-    // UNION all SELECT {4} FROM {2}MAC_10634b0966f0  {0}  UNION all SELECT {4} FROM {2}MAC_08626683922a  {0}
-    // UNION all SELECT {4} FROM {2}MAC_c8e7d8e187a7  {0}  UNION all SELECT {4} FROM {2}MAC_f0b42937e924  {0}
-    // UNION all SELECT {4} FROM {2}MAC_fcaa14afca45  {0}  UNION all SELECT {4} FROM {2}MAC_F07959DF968E  {0}
-    // UNION all SELECT {4} FROM {2}MAC_f07959df9218  {0}  UNION all SELECT {4} FROM {2}MAC_f07959df9694  {0}
-    // UNION all SELECT {4} FROM {2}MAC_f07959dfa742  {0}  UNION all SELECT {4} FROM {2}MAC_fcaa14db2983  {0}  ",
-    let stream = client
-        .simple_query(format!(
-            "SELECT {1} FROM MAC_10GBOSADATA  {0}",
-            query_ty, testtype_12
-        ))
-        .await
-        .unwrap();
-    let rowsets = stream.into_results().await.unwrap();
-    for i in 0..rowsets.len() {
-        let rows = rowsets.get(i).unwrap();
-        for row in rows {
-            let sn = row.get::<&str, _>(0).unwrap().to_string();
-            let workid = row.get::<&str, _>(1).unwrap().to_string();
-            let pn = row.get::<&str, _>(2).unwrap().to_string();
-            let result = row.get::<&str, _>(3).unwrap().to_string();
-            let ith = row.get::<&str, _>(4).unwrap().to_string();
-            let pf = row.get::<&str, _>(5).unwrap().to_string();
-            let vop = row.get::<&str, _>(6).unwrap().to_string();
-            let im = row.get::<&str, _>(7).unwrap().to_string();
-            let rs = row.get::<&str, _>(8).unwrap().to_string();
-            let sen = row.get::<&str, _>(9).unwrap().to_string();
-            let res = row.get::<&str, _>(10).unwrap().to_string();
-            let icc = row.get::<&str, _>(11).unwrap().to_string();
-            let idark = row.get::<&str, _>(12).unwrap().to_string();
-            let vbr = row.get::<&str, _>(13).unwrap().to_string();
-            let ixtalk = row.get::<&str, _>(14).unwrap().to_string();
-            let kink = row.get::<&str, _>(15).unwrap().to_string();
-            let datatime = row
-                .get::<chrono::NaiveDateTime, _>(16)
-                .unwrap()
-                .format("%Y/%m/%d %H:%M:%S")
-                .to_string();
-            row_data.push(SnDataInfo {
-                sn,
-                product_bill: workid,
-                test_type: pn,
-                result,
-                ith,
-                pf,
-                vop,
-                im,
-                rs,
-                sen,
-                res,
-                icc,
-                idark,
-                vbr,
-                ixtalk,
-                kink,
-                testdate: datatime,
-            });
-        }
-    }
-    row_data
-}
-pub async fn box_work_test(s: String) -> Vec<BoxDataInfo> {
-    let mut datas = Vec::new();
-    let mut client = client().await;
-    let query_ty = format!(
-        "where Pack_no = '{}' ORDER BY [CreateTime] DESC OFFSET 0 ROWS ",
-        s
-    );
+use super::util::get_connect;
+
+pub async fn get_box(s: String) -> Vec<BoxDataInfo> {
+    let pool = get_connect("mes_Factory").await;
+    // 从连接池中获取一个连接
+    let mut conn = pool.get_conn().await.unwrap();
+    // 查询代码
+    let query_ty = format!("where Pack_no = '{}' ORDER BY CreateTime DESC", s);
     let testtype_none = "Pack_no,Sn,PN,WorkOrder,Creator,CreateTime";
-    let stream = client
-        .simple_query(format!(
-            "select {0} from MaterialPackSn {1} ",
-            testtype_none, query_ty
-        ))
-        .await
-        .unwrap();
-    let rowsets = stream.into_results().await.unwrap();
-    // let mut rv: Vec<Vec<String>> = vec![];
-    for i in 0..rowsets.len() {
-        let rows = rowsets.get(i).unwrap();
-        for row in rows {
-            let pno = row.get::<&str, _>(0).unwrap().to_string();
-            let sn = row.get::<&str, _>(1).unwrap().to_string();
-            let pn = row.get::<&str, _>(2).unwrap().to_string();
-            let workorder = row.get::<&str, _>(3).unwrap().to_string();
-            let creator = row.get::<&str, _>(4).unwrap().to_string();
-            let createtime = row
-                .get::<chrono::NaiveDateTime, _>(5)
-                .unwrap()
-                .format("%Y/%m/%d %H:%M:%S")
-                .to_string();
-            let data = BoxDataInfo {
+    let box_code = format!(
+        "select {0} from MaterialPackSn {1} ",
+        testtype_none, query_ty
+    );
+    // 执行查询
+    let results = conn
+        .query_map(box_code, |(pno, sn, pn, workorder, creator, createtime)| {
+            BoxDataInfo {
                 pno,
                 sn,
                 pn,
                 workorder,
                 creator,
                 createtime,
-            };
-            // let data = DataInfo::new()
-            // .set_pno(row.get::<&str, _>(0))
-            // .set_sn(row.get::<&str, _>(1))
-            // .set_pn(row.get::<&str, _>(2))
-            // .set_workorder(row.get::<&str, _>(3))
-            // .set_creator(row.get::<&str, _>(4))
-            // .set_createtime(Some(row.get::<chrono::NaiveDateTime, _>(5).unwrap().format("%Y/%m/%d %H:%M:%S").to_string().as_str()));
-            // let mut v: Vec<String> = vec![];
-            // v.push(row.get::<&str, _>(0).unwrap().to_string());
-            // v.push(row.get::<&str, _>(1).unwrap().to_string());
-            // v.push(row.get::<&str, _>(2).unwrap().to_string());
-            // v.push(row.get::<&str, _>(3).unwrap().to_string());
-            // v.push(row.get::<&str, _>(4).unwrap().to_string());
-            // v.push(row.get::<chrono::NaiveDateTime, _>(5).unwrap().to_string());
-            datas.push(data)
-        }
+            }
+        })
+        .await
+        .unwrap();
+    drop(conn);
+    pool.disconnect().await.unwrap();
+    results
+}
+pub async fn get_sn(s: String) -> Vec<SnDataInfo> {
+    let pool = get_connect("BOSAautotest_Data").await;
+
+    // 从连接池中获取一个连接
+    let mut conn = pool.get_conn().await.unwrap();
+    // 查询代码
+    let query_ty = format!("where SN = '{}'", s);
+    let testtype_12 = "SN,ProductBill,TestType,Result,Ith,Po,Vf,Im,Rs,Sen,Res,ICC,Idark,Vbr,Xtalk,Kink_I,TestDate";
+    let sn_code = format!(
+        "select {} from MAC_10GBOSADATA  {}",
+        testtype_12, query_ty
+    );
+    // 执行查询
+    let results: Vec<Row> = conn
+        .query(sn_code)
+        .await
+        .unwrap();
+    drop(conn);
+    pool.disconnect().await.unwrap();
+    let mut v = vec![];
+    for x in results.into_iter(){
+        let sn = SnDataInfo{ 
+            sn: String::from_utf8(Vec::try_from(x.clone().unwrap().get(0).unwrap().clone()).unwrap()).unwrap(), 
+            product_bill: String::from_utf8(Vec::try_from(x.clone().unwrap().get(1).unwrap().clone()).unwrap()).unwrap(), 
+            test_type: String::from_utf8(Vec::try_from(x.clone().unwrap().get(2).unwrap().clone()).unwrap()).unwrap(),
+             result: String::from_utf8(Vec::try_from(x.clone().unwrap().get(3).unwrap().clone()).unwrap()).unwrap(), 
+             ith: String::from_utf8(Vec::try_from(x.clone().unwrap().get(4).unwrap().clone()).unwrap()).unwrap(), 
+             pf: String::from_utf8(Vec::try_from(x.clone().unwrap().get(5).unwrap().clone()).unwrap()).unwrap(), 
+             vop: String::from_utf8(Vec::try_from(x.clone().unwrap().get(6).unwrap().clone()).unwrap()).unwrap(), 
+             im: String::from_utf8(Vec::try_from(x.clone().unwrap().get(7).unwrap().clone()).unwrap()).unwrap(), 
+             rs: String::from_utf8(Vec::try_from(x.clone().unwrap().get(8).unwrap().clone()).unwrap()).unwrap(), 
+             sen: String::from_utf8(Vec::try_from(x.clone().unwrap().get(9).unwrap().clone()).unwrap()).unwrap(), 
+             res: String::from_utf8(Vec::try_from(x.clone().unwrap().get(10).unwrap().clone()).unwrap()).unwrap(), 
+             icc: String::from_utf8(Vec::try_from(x.clone().unwrap().get(11).unwrap().clone()).unwrap()).unwrap(), 
+             idark: String::from_utf8(Vec::try_from(x.clone().unwrap().get(12).unwrap().clone()).unwrap()).unwrap(), 
+             vbr: String::from_utf8(Vec::try_from(x.clone().unwrap().get(13).unwrap().clone()).unwrap()).unwrap(), 
+             ixtalk: String::from_utf8(Vec::try_from(x.clone().unwrap().get(14).unwrap().clone()).unwrap()).unwrap(), 
+             kink: String::from_utf8(Vec::try_from(x.clone().unwrap().get(15).unwrap().clone()).unwrap()).unwrap(), 
+             testdate: String::from_utf8(Vec::try_from(x.clone().unwrap().get(16).unwrap().clone()).unwrap()).unwrap() };
+            v.push(sn.clone())
     }
-    // let quantity = datas.len();
-    // (datas, quantity)
-    datas
+    v
 }
 
 pub async fn login_user(id: String, pa: String) -> bool {
-    let mut client = login_check().await;
     let i = id.clone();
-    let stream = client
-        .simple_query(format!("select name from login where name = '{}'", i))
+    let pool = get_connect("login").await;
+    // 从连接池中获取一个连接
+    let mut conn = pool.get_conn().await.unwrap();
+    // 执行查询
+    let results: Vec<Row> = conn
+        .query(format!("select name from login where name = '{}'", i))
         .await
         .unwrap();
-    let row = stream.into_results().await.unwrap();
-    let r = row.get(0).unwrap();
+    drop(conn);
+    pool.disconnect().await.unwrap();
 
-    if r.is_empty() {
+    if results.is_empty() {
         false
     } else {
         login_pass(id, pa).await
@@ -153,13 +99,22 @@ pub async fn login_user(id: String, pa: String) -> bool {
 }
 
 pub async fn login_pass(id: String, p: String) -> bool {
-    let mut client = login_check().await;
     let i = id.clone();
-    let stream = client
-        .simple_query(format!("select password from login where name = '{}'", i))
+    let pool = get_connect("login").await;
+    // 从连接池中获取一个连接
+    let mut conn = pool.get_conn().await.unwrap();
+    // 执行查询
+    let results: Vec<Row> = conn
+        .query(format!("select password from login where name = '{}'", i))
         .await
         .unwrap();
-    let row = stream.into_row().await.unwrap().unwrap();
-    let r = row.get::<&str, _>(0).unwrap().to_string();
-    r == p
+    drop(conn);
+    pool.disconnect().await.unwrap();
+    let r = results.get(0).unwrap();
+    let mut pass = String::new();
+    for x in r.clone().unwrap() {
+        let t = String::from_utf8(Vec::try_from(x).unwrap()).unwrap();
+        pass = t
+    }
+    pass == p
 }

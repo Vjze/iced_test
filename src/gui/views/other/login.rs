@@ -7,6 +7,12 @@ use iced_aw::{modal, Card};
 
 use crate::gui::{Message, MyTools};
 
+pub struct Login {
+    pub(crate) name: String,
+    pub(crate) password: String,
+    pub(crate) id: String,
+    pub(crate) qx: String,
+}
 pub fn login(state: &MyTools) -> Container<'static, Message> {
     let overlay = if !state.logined {
         Some(

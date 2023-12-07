@@ -5,8 +5,8 @@ use iced::{Command, Length, Renderer};
 
 use super::assets::pngs::{IMG_LOGO_DARK, IMG_LOGO_LIGHT};
 use super::bar::{Bar, Message as BarMessage};
-use super::views::bandin_view::{BandinView, Message as BandinMessage};
-use super::views::order_view::{Message as OrderMessage, OrderView};
+// use super::views::bandin_view::{BandinView, Message as BandinMessage};
+// use super::views::order_view::{Message as OrderMessage, OrderView};
 use super::views::query_view::{Message as QueryMessage, QueryView};
 use super::{styles, MyTools};
 
@@ -15,8 +15,8 @@ pub enum Message {
     BarMessage(BarMessage),
     ViewChanged(TabId),
     QueryButton(QueryMessage),
-    OrderButoon(OrderMessage),
-    BandinButton(BandinMessage),
+    // OrderButoon(OrderMessage),
+    // BandinButton(BandinMessage),
     ThemeChange(bool),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -31,8 +31,8 @@ pub struct Leftview {
     bar: Bar,
     view: TabId,
     query: QueryView,
-    order: OrderView,
-    bandin: BandinView,
+    // order: OrderView,
+    // bandin: BandinView,
     pub theme: bool,
 }
 
@@ -42,8 +42,8 @@ impl Leftview {
             bar: Bar::new(),
             view: Default::default(),
             query: QueryView::new(),
-            order: Default::default(),
-            bandin: Default::default(),
+            // order: Default::default(),
+            // bandin: Default::default(),
             theme: false,
         }
     }
@@ -55,14 +55,14 @@ impl Leftview {
                 self.view = TabId::Query;
                 self.query.update(msg).map(Message::QueryButton)
             }
-            Message::OrderButoon(msg) => {
-                self.view = TabId::Query;
-                self.order.update(msg).map(Message::OrderButoon)
-            }
-            Message::BandinButton(msg) => {
-                self.view = TabId::Query;
-                self.bandin.update(msg).map(Message::BandinButton)
-            }
+            // Message::OrderButoon(msg) => {
+            //     self.view = TabId::Query;
+            //     self.order.update(msg).map(Message::OrderButoon)
+            // }
+            // Message::BandinButton(msg) => {
+            //     self.view = TabId::Query;
+            //     self.bandin.update(msg).map(Message::BandinButton)
+            // }
             Message::ViewChanged(view) => {
                 self.view = view;
                 Command::none()
@@ -133,8 +133,10 @@ impl Leftview {
         let all_bar = container(left).padding(5);
         let view = match self.view {
             TabId::Query => self.query.view().map(Message::QueryButton),
-            TabId::Bandin => self.bandin.view().map(Message::BandinButton),
-            TabId::Order => self.order.view().map(Message::OrderButoon),
+            TabId::Bandin => todo!(),
+            TabId::Order => todo!(),
+            // TabId::Bandin => self.bandin.view().map(Message::BandinButton),
+            // TabId::Order => self.order.view().map(Message::OrderButoon),
         };
         let col = row![all_bar, column![bar, view]]
             .align_items(iced::Alignment::Center)

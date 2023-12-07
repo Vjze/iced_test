@@ -12,11 +12,12 @@ date_picker = ["chrono"]
 iced = {version = "0.10.0" , default-features = false, features = ["tokio","image","svg"]}
 iced_aw = { version = "0.7", default-features = false, features = ["date_picker","modal","card"] }
 tokio = { version = "1.33",features = ["default"]}
-tokio-util = {version = "0.7.9", default-features = false, features = ["net","compat"]}
+# tokio-util = {version = "0.7.9", default-features = false, features = ["net","compat"]}
 chrono = { version = "0.4.31", default-features = false, optional = true }
 time = { version = "0.3.29", default-features = false, features = ["local-offset"] }
-tiberius={version="0.12.2",features = ["chrono","tds73"],default-features = false}
+# tiberius={version="0.12.2",features = ["chrono","tds73"],default-features = false}
 image = { version = "0.24.7", default-features = false, features = ["png"]}
+mysql_async = { version = "0.33.0", default-features = false, features = ["default-rustls"] }
 
 [profile.release]
 lto = true

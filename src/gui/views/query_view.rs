@@ -2,10 +2,9 @@ use super::{
     listview::{box_list_view, sn_list_view},
     BoxDataInfo, Selected, SnDataInfo,
 };
-use crate::gui::styles::container_styles::second_class_container_rounded_theme;
+use crate::{gui::styles::container_styles::second_class_container_rounded_theme, util::sql::{get_box, get_sn}};
 use crate::{
     gui::styles::{self, button_styles::transparent_button_with_rounded_border_theme},
-    util::sql::{box_work_test, sn_work},
 };
 use iced::{
     alignment::Horizontal,
@@ -14,6 +13,7 @@ use iced::{
 };
 use iced_aw::date_picker;
 use iced_aw::date_picker::Date;
+
 #[derive(Clone, Debug)]
 pub enum Message {
     Button,
@@ -72,9 +72,9 @@ impl QueryView {
                     self.text = s.clone();
                     match self.selected {
                         Some(value) => match value {
-                            Selected::Sn => Command::perform(sn_work(s), Message::Addsnresult),
+                            Selected::Sn => Command::perform(get_sn(s), Message::Addsnresult),
                             Selected::Box => {
-                                Command::perform(box_work_test(s), Message::Addboxresult)
+                                Command::perform(get_box(s), Message::Addboxresult)
                             }
                             Selected::Carton => Command::none(),
                             Selected::Workid => Command::none(),
@@ -132,6 +132,14 @@ impl QueryView {
                 self.show_picker_2 = false;
                 Command::none()
             }
+            // Message::OpenModal => {
+            //     self.show_modal = true;
+            //     Command::none()
+            // }
+            // Message::CloseModal => {
+            //     self.show_modal = false;
+            //     Command::none()
+            // }
         }
     }
     pub fn view(&self) -> iced::Element<'_, Message, Renderer> {
@@ -171,6 +179,7 @@ impl QueryView {
         let but = button("查 询")
             .on_press(Message::Button)
             .style(transparent_button_with_rounded_border_theme());
+
         let main_row = row![input, select, check, text_much]
             .spacing(10)
             .padding(5)
@@ -189,7 +198,7 @@ impl QueryView {
                     // .into()
                 }
                 Selected::Box => {
-                    let dataquery_is_check = match self.datequery {
+                    let dataquery_is_check =  match self.datequery {
                         true => container(row![datepicker_1, datepicker_2].spacing(10)),
                         false => container(""),
                     };
